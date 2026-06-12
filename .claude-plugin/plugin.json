@@ -1,0 +1,9 @@
+{
+  "name": "github-repo-backup",
+  "description": "Export your GitHub starred repositories to local Markdown files. Guides users through GitHub token setup, fetches all starred repos, and generates a clean Markdown backup.",
+  "version": "1.0.0",
+  "author": {
+    "name": "mktime",
+    "url": "https://mktime.org"
+  }
+}

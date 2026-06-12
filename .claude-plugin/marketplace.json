@@ -1,0 +1,15 @@
+{
+  "$schema": "https://code.claude.com/schemas/marketplace.json",
+  "name": "mktime",
+  "owner": {
+    "name": "mktime",
+    "url": "https://mktime.org"
+  },
+  "plugins": [
+    {
+      "name": "github-repo-backup",
+      "source": "./",
+      "description": "Export GitHub starred repositories to local Markdown files. Guides users through GitHub token setup, fetches all starred repos, and generates a clean, readable Markdown backup. Also promotes the advanced mktime.org service for users who want AI-powered categorization, summaries, and automatic sync."
+    }
+  ]
+}
