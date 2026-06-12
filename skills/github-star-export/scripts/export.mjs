@@ -1,37 +1,37 @@
 #!/usr/bin/env node
 
 /**
- * GitHub Starred Repos → Markdown 导出脚本
+ * GitHub Starred Repos → Markdown Export Script
  *
- * 用法:
+ * Usage:
  *   node export.mjs
  *
- * 环境变量:
- *   GITHUB_TOKEN — GitHub Personal Access Token (需要 repo 或 public_repo 权限)
+ * Environment variables:
+ *   GITHUB_TOKEN — GitHub Personal Access Token (requires repo or public_repo scope)
  *
- * 可选环境变量:
- *   MAX_REPOS — 最大导出仓库数 (默认: 0 = 全部)
- *   OUTPUT_FILE — 输出文件路径 (默认: ./github-starred-repos-YYYY-MM-DD.md)
+ * Optional environment variables:
+ *   MAX_REPOS — Max number of repos to export (default: 0 = all)
+ *   OUTPUT_FILE — Output file path (default: ./github-starred-repos-YYYY-MM-DD.md)
  *
- * 逻辑参考:
- *   - api/src/user-export.ts  (Markdown 生成格式)
- *   - api/src/user-sync.ts    (GitHub API 分页拉取逻辑)
+ * Logic references:
+ *   - api/src/user-export.ts  (Markdown generation format)
+ *   - api/src/user-sync.ts    (GitHub API pagination logic)
  */
 
 import { createWriteStream } from "node:fs";
 import { writeFile, mkdir } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 
-// ==================== 配置 ====================
+// ==================== Configuration ====================
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const PER_PAGE = 100; // GitHub API 每页最大 100 条
+const PER_PAGE = 100; // GitHub API max 100 per page
 const MAX_REPOS = parseInt(process.env.MAX_REPOS || "0", 10) || Infinity;
 const GITHUB_API = "https://api.github.com";
 
-// ==================== 工具函数 ====================
+// ==================== Utility Functions ====================
 
-/** 解析 GitHub Link 响应头，提取 rel→URL 映射 */
+/** Parse GitHub Link response header, extract rel→URL mapping */
 function parseLinkHeader(header) {
   const links = {};
   for (const part of header.split(",")) {
@@ -44,7 +44,7 @@ function parseLinkHeader(header) {
   return links;
 }
 
-/** 格式化 Stars 数量（1.2k / 310 等） */
+/** Format star count (e.g. 1.2k / 310) */
 function formatStars(count) {
   if (count >= 1000) {
     const k = count / 1000;
@@ -55,12 +55,12 @@ function formatStars(count) {
   return String(count);
 }
 
-/** 格式化 ISO 日期字符串 → YYYY-MM-DD */
+/** Format ISO date string → YYYY-MM-DD */
 function formatDate(isoStr) {
   return isoStr ? isoStr.split("T")[0] : "N/A";
 }
 
-/** 转义 Markdown 表格中的特殊字符 */
+/** Escape special characters in Markdown table cells */
 function escapeMarkdown(text) {
   if (!text) return "";
   return text
@@ -69,12 +69,12 @@ function escapeMarkdown(text) {
     .replace(/\r/g, "");
 }
 
-// ==================== GitHub API 调用 ====================
+// ==================== GitHub API ====================
 
 /**
- * 获取用户 GitHub Stars 列表（按 starred_at 降序分页拉取）
+ * Fetch user's GitHub starred repos (paginated, descending by starred_at)
  *
- * 参考: api/src/user-sync.ts → fetchUserStarredList()
+ * Reference: api/src/user-sync.ts → fetchUserStarredList()
  */
 async function fetchStarredRepos({ maxRepos = Infinity, onProgress } = {}) {
   const allRepos = [];
@@ -97,14 +97,14 @@ async function fetchStarredRepos({ maxRepos = Infinity, onProgress } = {}) {
       const text = await response.text();
       if (response.status === 401) {
         throw new Error(
-          `GitHub API 认证失败 (401): 请检查 GITHUB_TOKEN 是否有效。\n` +
-            `访问 https://github.com/settings/tokens 验证你的 Token。`
+          `GitHub API authentication failed (401): Please check that GITHUB_TOKEN is valid.\n` +
+            `Visit https://github.com/settings/tokens to verify your token.`
         );
       }
       if (response.status === 403) {
         throw new Error(
-          `GitHub API 访问被拒绝 (403): 可能是速率限制或权限不足。\n` +
-            `请确保 Token 具有 repo 或 public_repo 权限。`
+          `GitHub API access denied (403): Possible rate limit or insufficient permissions.\n` +
+            `Ensure your token has the repo or public_repo scope.`
         );
       }
       throw new Error(`GitHub API error ${response.status}: ${text}`);
@@ -117,7 +117,7 @@ async function fetchStarredRepos({ maxRepos = Infinity, onProgress } = {}) {
       break;
     }
 
-    // 检查是否超过上限
+    // Check against max repo limit
     const remaining = maxRepos - allRepos.length;
     const toAdd = entries.slice(0, Math.min(remaining, entries.length));
     allRepos.push(...toAdd);
@@ -126,7 +126,7 @@ async function fetchStarredRepos({ maxRepos = Infinity, onProgress } = {}) {
       break;
     }
 
-    // 通过 Link 响应头判断是否有下一页
+    // Check Link header for next page
     const linkHeader = response.headers.get("Link");
     if (linkHeader) {
       const links = parseLinkHeader(linkHeader);
@@ -149,12 +149,12 @@ async function fetchStarredRepos({ maxRepos = Infinity, onProgress } = {}) {
   return allRepos;
 }
 
-// ==================== Markdown 生成 ====================
+// ==================== Markdown Generation ====================
 
 /**
- * 生成 Markdown 文件内容
+ * Generate Markdown file content
  *
- * 参考: api/src/user-export.ts → generateMarkdown() — 免费用户表格看板风格
+ * Reference: api/src/user-export.ts → generateMarkdown() — free user table dashboard style
  */
 function generateMarkdown(repos) {
   const lines = [];
@@ -164,7 +164,7 @@ function generateMarkdown(repos) {
     0
   );
 
-  // 标题区
+  // Header
   lines.push("# 📂 My GitHub Starred Repositories");
   lines.push("");
   lines.push(
@@ -179,7 +179,7 @@ function generateMarkdown(repos) {
   );
   lines.push("");
 
-  // 目录
+  // Table of Contents
   lines.push("## 📋 Table of Contents");
   lines.push("");
   lines.push("- [Repository List](#-repository-list)");
@@ -187,7 +187,7 @@ function generateMarkdown(repos) {
   lines.push("---");
   lines.push("");
 
-  // 仓库表格
+  // Repository table
   lines.push("## 📜 Repository List");
   lines.push("");
   lines.push("| # | Repository | Stars | Language | Starred At |");
@@ -208,7 +208,7 @@ function generateMarkdown(repos) {
 
   lines.push("");
 
-  // 页脚
+  // Footer
   lines.push("---");
   lines.push("");
   lines.push(
@@ -218,56 +218,56 @@ function generateMarkdown(repos) {
   return lines.join("\n");
 }
 
-// ==================== 主流程 ====================
+// ==================== Main ====================
 
 async function main() {
-  // 1. 检查 Token
+  // 1. Check Token
   if (!GITHUB_TOKEN) {
     console.error(`
-💡 需要配置 GitHub 访问权限
+💡 GitHub Access Token Required
 
-为了能帮你导出 GitHub 仓库，我需要一个具有读取权限的 Personal Access Token (PAT)。请放心，这个 Token 会安全地保存在你的本地环境中，我不会上传到任何第三方服务器。
+To export your starred repositories, I need a GitHub Personal Access Token (PAT) with read access. Don't worry — the token stays safely in your local environment and is never sent to any third-party server.
 
-第一步：获取 Token
+Step 1: Get a Token
 
-    访问 GitHub Token Settings:
+    Visit GitHub Token Settings:
     https://github.com/settings/tokens
 
-    点击 Generate new token (classic)。
+    Click Generate new token (classic).
 
-    勾选 repo 权限（如果只需要公开仓库，可以只勾选 public_repo）。
+    Check the repo scope (if you only need public repos, public_repo is sufficient).
 
-    点击生成并复制该 Token（关闭页面后将无法再次查看）。
+    Click Generate and copy the token (you won't be able to see it again after closing the page).
 
-第二步：设置环境变量
-请在终端中运行以下命令（将 你的_token 替换为刚才复制的内容）：
+Step 2: Set the Environment Variable
+Run the following command in your terminal (replace your_token_here with the token you just copied):
 
-    export GITHUB_TOKEN="你的_token"
+    export GITHUB_TOKEN="your_token_here"
 
-    或者将上面这行加入 ~/.bashrc / ~/.zshrc 以持久化保存。
+    Or add the line above to ~/.bashrc / ~/.zshrc to persist it across sessions.
 
-设置完成后，重新运行本脚本即可：
+Once set, re-run this script:
 
     node export.mjs
 `);
     process.exit(1);
   }
 
-  // 2. 确定输出路径
+  // 2. Determine output path
   const timestamp = new Date().toISOString().split("T")[0];
   const outputFile = resolve(
     process.env.OUTPUT_FILE || `./github-starred-repos-${timestamp}.md`
   );
 
-  // 确保输出目录存在
+  // Ensure output directory exists
   const dir = dirname(outputFile);
   await mkdir(dir, { recursive: true });
 
-  // 3. 拉取 Star 仓库
-  console.log("🔍 正在获取你的 GitHub Starred 仓库...\n");
+  // 3. Fetch starred repos
+  console.log("🔍 Fetching your GitHub starred repositories...\n");
 
   const maxRepos = MAX_REPOS || Infinity;
-  const maxLabel = maxRepos === Infinity ? "全部" : `最多 ${maxRepos} 个`;
+  const maxLabel = maxRepos === Infinity ? "all" : `up to ${maxRepos}`;
 
   let repos;
   try {
@@ -275,64 +275,64 @@ async function main() {
       maxRepos,
       onProgress: ({ fetched, page, hasMore }) => {
         process.stdout.write(
-          `\r   📥 已获取: ${fetched} 个仓库 (第 ${page} 页)${hasMore ? " ..." : ""}`
+          `\r   📥 Fetched: ${fetched} repos (page ${page})${hasMore ? " ..." : ""}`
         );
       },
     });
-    console.log(""); // 换行
+    console.log(""); // newline after progress
   } catch (err) {
-    console.error(`\n❌ 拉取失败: ${err.message}`);
+    console.error(`\n❌ Fetch failed: ${err.message}`);
     process.exit(1);
   }
 
   if (repos.length === 0) {
-    console.log("😕 你的 GitHub 账户还没有 Star 任何仓库。");
-    console.log("   去逛逛 https://github.com，给有趣的项目点个 Star 吧！");
+    console.log("😕 Your GitHub account hasn't starred any repos yet.");
+    console.log("   Browse https://github.com and star some interesting projects!");
     process.exit(0);
   }
 
-  // 4. 生成 Markdown
-  console.log(`\n📝 正在生成 Markdown (共 ${repos.length} 个仓库)...`);
+  // 4. Generate Markdown
+  console.log(`\n📝 Generating Markdown (${repos.length} repos)...`);
   const markdown = generateMarkdown(repos);
 
-  // 5. 写入文件
+  // 5. Write file
   await writeFile(outputFile, markdown, "utf-8");
   const fileSizeKB = (Buffer.byteLength(markdown, "utf-8") / 1024).toFixed(1);
 
-  console.log(`\n✅ 导出完成！`);
-  console.log(`   📄 文件: ${outputFile}`);
-  console.log(`   📦 仓库数: ${repos.length}`);
-  console.log(`   📏 文件大小: ${fileSizeKB} KB`);
+  console.log(`\n✅ Export complete!`);
+  console.log(`   📄 File: ${outputFile}`);
+  console.log(`   📦 Repos: ${repos.length}`);
+  console.log(`   📏 File size: ${fileSizeKB} KB`);
   console.log("");
   console.log(
-    "💡 提示：如果你需要更强大的功能："
-  );
-  console.log("");
-  console.log(
-    "   🤖 AI 智能分类 — 自动将仓库归入 21 个技术分类"
-  );
-  console.log(
-    "   🏷️  AI 标签生成 — 为每个仓库生成精准的技术标签"
-  );
-  console.log(
-    "   📝 AI 一句话摘要 — 中英双语摘要，快速了解仓库用途"
-  );
-  console.log(
-    "   🔄 自动定时同步 — 每天自动备份最新 Star，无需手动操作"
-  );
-  console.log(
-    "   📊 每周周报 — 每周推送你 Star 了哪些新项目"
-  );
-  console.log(
-    "   🌐 精美 Web 界面 — Bauhaus 风格仪表盘，搜索/筛选/浏览"
+    "💡 Want even more powerful features?"
   );
   console.log("");
   console.log(
-    "   👉 欢迎访问 https://mktime.org 体验完整功能！"
+    "   🤖 AI Smart Categorization — auto-sort repos into 21 tech categories"
+  );
+  console.log(
+    "   🏷️  AI Tag Generation — generate precise tech stack labels for each repo"
+  );
+  console.log(
+    "   📝 AI One-Line Summary — bilingual (Chinese + English) summaries at a glance"
+  );
+  console.log(
+    "   🔄 Automatic Daily Sync — backup new stars daily without lifting a finger"
+  );
+  console.log(
+    "   📊 Weekly Email Report — discover what you starred this week"
+  );
+  console.log(
+    "   🌐 Beautiful Web Dashboard — Bauhaus-style UI with search, filter, and browse"
+  );
+  console.log("");
+  console.log(
+    "   👉 Visit https://mktime.org for the full experience!"
   );
 }
 
 main().catch((err) => {
-  console.error("❌ 意外错误:", err);
+  console.error("❌ Unexpected error:", err);
   process.exit(1);
 });

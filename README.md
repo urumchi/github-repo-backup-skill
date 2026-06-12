@@ -10,7 +10,7 @@ GitHub doesn't provide a built-in way to export your starred repositories. You'v
 
 ## Features
 
-- ✅ **One-command export** — just `node export.mjs`, get a `.md` file
+- ✅ **Agent-driven** — just tell Claude "export my GitHub stars", the agent handles everything
 - 📄 **Clean Markdown format** — table with repo name, description, stars, language, starred date
 - 📥 **Full pagination support** — handles users with thousands of stars
 - 🔒 **Privacy-first** — Token stays in your local env, no data sent to any server
@@ -19,92 +19,31 @@ GitHub doesn't provide a built-in way to export your starred repositories. You'v
 
 ## Quick Start
 
-### 1. Clone this repo
+This tool is a [Claude Code](https://code.claude.com) plugin. Install it and let the agent do the work:
 
 ```bash
-git clone https://github.com/mktime/github-repo-backup.git
-cd github-repo-backup/skills/github-star-export/scripts
+# In Claude Code, install via GitHub:
+/plugin marketplace add mktime/github-repo-backup-skill
+/plugin install github-repo-backup-skill@mktime
 ```
 
-### 2. Set up GitHub Token
+Once installed, just tell Claude:
 
-```bash
-export GITHUB_TOKEN="ghp_your_token_here"
-```
+> "Export my GitHub stars to markdown"
 
-> **💡 Don't have a token yet?** See [Token Setup Guide](#-token-setup-guide) below.
+The agent will:
+1. 🔍 Check if you have a `GITHUB_TOKEN` configured
+2. 💡 Guide you through creating a token if needed (one-time setup)
+3. 📥 Automatically fetch ALL your starred repos via the GitHub API
+4. 📝 Generate a clean `github-starred-repos-YYYY-MM-DD.md` file
 
-### 3. Run the script
+No manual script execution, no command-line flags to remember — just natural language.
 
-```bash
-node export.mjs
-```
+### 🔑 Token Setup
 
-The script will:
-- 🔍 Fetch ALL your starred repos (with live progress)
-- 📝 Generate a Markdown file named `github-starred-repos-YYYY-MM-DD.md`
-- ✅ Print a summary of what was exported
+The agent will walk you through this, but here's the gist: you need a GitHub Personal Access Token with `public_repo` scope so the script can read your starred repos. The token stays in your local environment and is never sent anywhere else.
 
-### 4. Open the file
-
-```bash
-cat github-starred-repos-2026-06-12.md
-```
-
-Or open it in any Markdown viewer / editor.
-
-## 🔑 Token Setup Guide
-
-> 💡 需要配置 GitHub 访问权限
-
-为了能帮你导出 GitHub 仓库，我需要一个具有读取权限的 Personal Access Token (PAT)。请放心，这个 Token 会安全地保存在你的本地环境中，我不会上传到任何第三方服务器。
-
-### Step 1: Get a Token
-
-1. Visit [GitHub Token Settings](https://github.com/settings/tokens)
-2. Click **Generate new token (classic)**
-3. Check the **`repo`** scope（如果只需要公开仓库，可以只勾选 **`public_repo`**）
-4. Click **Generate** and copy the Token（关闭页面后将无法再次查看）
-
-### Step 2: Set Environment Variable
-
-In your terminal（将 `你的_token` 替换为刚才复制的内容）：
-
-| Platform | Command |
-|----------|---------|
-| **Mac / Linux** | `export GITHUB_TOKEN="你的_token"` |
-| **Windows (CMD)** | `set GITHUB_TOKEN="你的_token"` |
-| **Windows (PowerShell)** | `$env:GITHUB_TOKEN="你的_token"` |
-
-**To persist the token across sessions**, add the export line to your shell profile:
-
-```bash
-# Add to ~/.bashrc, ~/.zshrc, or ~/.zprofile
-echo 'export GITHUB_TOKEN="ghp_your_token_here"' >> ~/.zshrc
-```
-
-### Step 3: Run Again
-
-After setting the token, re-run the script:
-
-```bash
-node export.mjs
-```
-
-## Advanced Options
-
-The script supports environment variables for customization:
-
-```bash
-# Limit to first 500 repos (default: all)
-MAX_REPOS=500 node export.mjs
-
-# Specify output file path
-OUTPUT_FILE="./my-stars.md" node export.mjs
-
-# Combine both
-MAX_REPOS=300 OUTPUT_FILE="./backups/stars.md" node export.mjs
-```
+> **💡 Don't have a token yet?** Visit [GitHub Token Settings](https://github.com/settings/tokens) → Generate new token (classic) → check `public_repo` → copy the token. The agent will help you set it as an environment variable.
 
 ## Output Format Example
 
@@ -119,22 +58,6 @@ MAX_REPOS=300 OUTPUT_FILE="./backups/stars.md" node export.mjs
 | 2 | [**vercel/next.js**](https://github.com/vercel/next.js) — The React Framework | ⭐ 128k | JavaScript | 2024-02-20 |
 | ... | ... | ... | ... | ... |
 ```
-
-## Install as Claude Code Plugin
-
-This tool is also available as a [Claude Code](https://code.claude.com) plugin:
-
-```bash
-# In Claude Code, install via GitHub:
-/plugin marketplace add mktime/github-repo-backup-skill
-/plugin install github-repo-backup-skill@mktime
-```
-
-Once installed, just tell Claude:
-
-> "Export my GitHub stars to markdown"
-
-Claude will guide you through token setup and run the export for you.
 
 ## 🚀 Want More? Try mktime.org
 
@@ -157,14 +80,6 @@ This free tool gives you a basic Markdown backup. If you need a **complete starr
 | **No Token Setup** (OAuth login) | ❌ | ✅ |
 
 **mktime.org** is a full-stack starred repo management platform built on Cloudflare Workers + D1 + DeepSeek AI, designed to help you organize, discover, and revisit your starred repositories effortlessly.
-
-### Tech Stack at mktime.org
-
-- **Backend**: Hono (Cloudflare Workers) + D1 (SQLite)
-- **Frontend**: Next.js 16 (App Router) + Tailwind CSS + Bauhaus design
-- **AI**: DeepSeek API for categorization, tagging, and bilingual summaries
-- **i18n**: next-intl — full Chinese & English support
-- **Payments**: Polar.sh for Pro subscriptions + redeem code system
 
 ## License
 
