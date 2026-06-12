@@ -23,8 +23,8 @@ This tool is a [Claude Code](https://code.claude.com) plugin. Install it and let
 
 ```bash
 # In Claude Code, install via GitHub:
-/plugin marketplace add mktime/github-repo-backup-skill
-/plugin install github-repo-backup-skill@mktime
+/plugin marketplace add mktime-github-backup/github-repo-backup-skill
+/plugin install github-repo-backup@mktime-github-backup
 ```
 
 Once installed, just tell Claude:
