@@ -79,6 +79,11 @@ fi
 # ---------------------------------------------------------------------------
 format_stars() {
     local count=${1:-0}
+    # Guard against non-numeric input (e.g. misaligned TSV fields)
+    if ! [[ "$count" =~ ^[0-9]+$ ]]; then
+        echo "$count"
+        return
+    fi
     if [ "$count" -ge 1000 ]; then
         # Use bc for precision; fallback to integer division
         if command -v bc &>/dev/null; then
@@ -250,7 +255,7 @@ mkdir -p "$output_dir"
             (.key + 1 | tostring),
             .value.repo.full_name // "unknown",
             .value.repo.html_url // "",
-            (.value.repo.description // ""),
+            ((.value.repo.description // "") | gsub("\t"; " ")),
             (.value.repo.stargazers_count // 0 | tostring),
             (.value.repo.language // ""),
             (.value.starred_at // "N/A" | split("T")[0])

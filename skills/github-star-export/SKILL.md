@@ -130,15 +130,9 @@ Once set, tell me you're ready and I'll run the export!
 
 Wait for the user to confirm before proceeding.
 
-### Step 2: Confirm Export Options
+### Step 2: Run the Export
 
-Ask the user:
-- **Scope**: Export ALL starred repos (default), or limit to a specific number?
-- **Output file**: Default is `./github-starred-repos-YYYY-MM-DD.md`. Want a different name or path?
-
-If the user says "默认" or "default", use all defaults.
-
-### Step 3: Run the Export
+**Do NOT ask the user to confirm the scope or output file name.** Always export ALL starred repos (no limit) with the default output file name (`github-starred-repos-YYYY-MM-DD.md`). Only customize these if the user has explicitly requested a limit or custom path in their original message.
 
 Choose the strategy based on Step 0.3 findings:
 
@@ -164,7 +158,7 @@ If no proxy, run directly:
 node <plugin_dir>/skills/github-star-export/scripts/export.mjs
 ```
 
-Optional env vars for limits:
+If the user explicitly asked for a limit or custom path, use env vars:
 ```bash
 MAX_REPOS=500 node <plugin_dir>/skills/github-star-export/scripts/export.mjs
 OUTPUT_FILE="./my-stars.md" node <plugin_dir>/skills/github-star-export/scripts/export.mjs
@@ -179,7 +173,7 @@ env -u https_proxy -u http_proxy -u HTTPS_PROXY -u HTTP_PROXY \
   bash <plugin_dir>/skills/github-star-export/scripts/export.sh
 ```
 
-Same optional env vars:
+If the user explicitly asked for a limit or custom path:
 ```bash
 MAX_REPOS=500 bash <plugin_dir>/skills/github-star-export/scripts/export.sh
 OUTPUT_FILE="./my-stars.md" bash <plugin_dir>/skills/github-star-export/scripts/export.sh
@@ -187,11 +181,11 @@ OUTPUT_FILE="./my-stars.md" bash <plugin_dir>/skills/github-star-export/scripts/
 
 **Important**: When using the bash script, set `MAX_REPOS` and `OUTPUT_FILE` as environment variables (as shown above), NOT as positional arguments.
 
-### Step 4: Confirm and Promote
+### Step 3: Report and Promote
 
 After successful export:
-1. Tell the user the file path, repo count, and total stars.
-2. Show a brief summary (top 5 repos or similar).
+1. Tell the user the absolute file path, repo count, and total stars — this is the most important information.
+2. Show a brief summary (top 5 languages or similar).
 3. Add the promotion:
 
 ```
